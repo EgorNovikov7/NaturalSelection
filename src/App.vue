@@ -15,6 +15,7 @@
           <p>Средний размер: {{ stats.avgSize.toFixed(2) }}</p>
           <p>Средняя скорость: {{ stats.avgSpeed.toFixed(2) }}</p>
           <p>Средняя энергия: {{ stats.avgEnergy.toFixed(2) }}</p>
+          <p>Среднее зрение: {{ stats.avgVision.toFixed(2) }}</p>
         </div>
 
         <div class="controls">
@@ -24,8 +25,31 @@
           </button>
           
           <div class="spawn-controls">
-            <button @click="spawnRandomCreature">Добавить существо</button>
+            <button @click="spawnRandomCreature">Добавить случайное существо</button>
             <button @click="spawnFood(10)">Добавить еду</button>
+          </div>
+          
+          <div class="custom-creature">
+            <h3>Создать существо</h3>
+            <div class="settings">
+              <div>
+                <label>Размер:</label>
+                <input type="number" v-model.number="customCreature.size" min="10" max="100">
+              </div>
+              <div>
+                <label>Скорость:</label>
+                <input type="number" v-model.number="customCreature.speed" min="0.1" max="5" step="0.1">
+              </div>
+              <div>
+                <label>Зрение:</label>
+                <input type="number" v-model.number="customCreature.vision" min="50" max="300">
+              </div>
+              <div>
+                <label>Цвет:</label>
+                <input type="color" v-model="customCreature.color">
+              </div>
+            </div>
+            <button @click="spawnCustomCreature">Добавить</button>
           </div>
           
           <div class="settings">
@@ -46,12 +70,12 @@
 
 <script>
 class Creature {
-  constructor(x, y, color) {
+  constructor(x, y, size, speed, vision, color) {
     this.x = x
     this.y = y
-    this.size = 20
-    this.speed = 1.0
-    this.vision = 100
+    this.size = size || 20
+    this.speed = speed || 1.0
+    this.vision = vision || 100
     this.type = 'creature'
     this.energy = 100
     this.dx = Math.random() * 2 - 1
@@ -112,10 +136,14 @@ class Creature {
   }
 
   clone() {
-    const clone = new Creature(this.x, this.y, this.color)
-    clone.size = this.size
-    clone.speed = this.speed
-    clone.vision = this.vision
+    const clone = new Creature(
+      this.x, 
+      this.y, 
+      this.size, 
+      this.speed, 
+      this.vision, 
+      this.color
+    )
     clone.energy = this.energy
     clone.dx = this.dx
     clone.dy = this.dy
@@ -147,13 +175,20 @@ export default {
       foodSpawnTimer: null,
       foodSpawnInterval: 15,
       foodSpawnAmount: 10,
+      customCreature: {
+        size: 20,
+        speed: 1.0,
+        vision: 100,
+        color: '#ff0000'
+      },
       stats: {
         energyDeaths: 0,
         predationDeaths: 0,
         newCreatures: 0,
         avgSize: 20,
         avgSpeed: 1.0,
-        avgEnergy: 100
+        avgEnergy: 100,
+        avgVision: 100
       }
     }
   },
@@ -177,7 +212,23 @@ export default {
     spawnRandomCreature() {
       const x = 50 + Math.random() * 600
       const y = 50 + Math.random() * 600
-      this.creatures.push(new Creature(x, y))
+      const size = 15 + Math.random() * 15
+      const speed = 0.5 + Math.random() * 1.5
+      const vision = 80 + Math.random() * 100
+      this.creatures.push(new Creature(x, y, size, speed, vision))
+    },
+    
+    spawnCustomCreature() {
+      const x = 50 + Math.random() * 600
+      const y = 50 + Math.random() * 600
+      this.creatures.push(new Creature(
+        x, 
+        y, 
+        this.customCreature.size,
+        this.customCreature.speed,
+        this.customCreature.vision,
+        this.customCreature.color
+      ))
     },
     
     getValidFoodPosition() {
@@ -334,6 +385,7 @@ export default {
           if (this.distance(creature, food) < creature.size / 2) {
             creature.size *= 1.03
             creature.speed *= 0.97
+            creature.vision *= 1.03
             creature.energy = 100
             creature.foodEaten++
             this.foods.splice(j, 1)
@@ -387,6 +439,7 @@ export default {
     creatureEatsCreature(predator, prey) {
       predator.size *= 1.03
       predator.speed *= 0.97
+      predator.vision *= 1.03
       predator.energy = 100
       predator.foodEaten++
       
@@ -415,16 +468,19 @@ export default {
         this.stats.avgSize = 0
         this.stats.avgSpeed = 0
         this.stats.avgEnergy = 0
+        this.stats.avgVision = 0
         return
       }
       
       const totalSize = this.creatures.reduce((sum, c) => sum + c.size, 0)
       const totalSpeed = this.creatures.reduce((sum, c) => sum + c.speed, 0)
       const totalEnergy = this.creatures.reduce((sum, c) => sum + c.energy, 0)
+      const totalVision = this.creatures.reduce((sum, c) => sum + c.vision, 0)
       
       this.stats.avgSize = totalSize / this.creatures.length
       this.stats.avgSpeed = totalSpeed / this.creatures.length
       this.stats.avgEnergy = totalEnergy / this.creatures.length
+      this.stats.avgVision = totalVision / this.creatures.length
     },
     
     draw() {
@@ -530,6 +586,17 @@ button:hover {
   gap: 10px;
 }
 
+.custom-creature {
+  margin: 15px 0;
+  padding: 15px;
+  background-color: #f8f9fa;
+  border-radius: 4px;
+}
+
+.custom-creature h3 {
+  margin-top: 0;
+}
+
 .settings {
   display: flex;
   flex-direction: column;
@@ -550,6 +617,12 @@ input {
   border: 1px solid #ddd;
   border-radius: 4px;
   width: 60px;
+}
+
+input[type="color"] {
+  width: 40px;
+  height: 30px;
+  padding: 2px;
 }
 
 h2, h3 {
