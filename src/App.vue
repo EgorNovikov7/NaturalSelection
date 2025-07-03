@@ -6,10 +6,9 @@
         <h2>Статистика</h2>
         <div class="stats">
           <p>Умерли от голода: {{ stats.energyDeaths }}</p>
-          <p>Съедено хищниками: {{ stats.predationDeaths }}</p>
+          <p>Съедено существ: {{ stats.predationDeaths }}</p>
           <p>Новых существ: {{ stats.newCreatures }}</p>
-          <p>Хищников: {{ predatorCount }}</p>
-          <p>Мирных: {{ preyCount }}</p>
+          <p>Всего существ: {{ creatures.length }}</p>
           <p>Еды: {{ foods.length }}</p>
           
           <h3>Характеристики</h3>
@@ -25,8 +24,7 @@
           </button>
           
           <div class="spawn-controls">
-            <button @click="spawnRandomPredator">Добавить хищника</button>
-            <button @click="spawnRandomPrey">Добавить мирного</button>
+            <button @click="spawnRandomPrey">Добавить существо</button>
             <button @click="spawnFood(10)">Добавить еду</button>
           </div>
           
@@ -61,16 +59,16 @@ class Creature {
     this.dy = Math.random() * 2 - 1
     this.color = this.getRandomColor()
     this.foodEaten = 0
+    this.isAggressive = false
   }
 
   getRandomColor() {
-    return `hsl(${Math.random() * 360}, 70%, 50%)`
+    return `hsl(${30 + Math.random() * 60}, 70%, 50%)` // Оранжевые оттенки
   }
 
-  // Добавлен метод update()
   update(deltaTime) {
-    this.energy -= 10 * deltaTime
-    return this.energy <= 0 // Возвращает true, если существо умерло
+    this.energy -= 5 * deltaTime * (this.size / 20) // Крупные тратят больше энергии
+    return this.energy <= 0
   }
 
   distanceTo(target) {
@@ -122,57 +120,61 @@ class Creature {
     this.x += this.dx * this.speed * 30 * deltaTime
     this.y += this.dy * this.speed * 30 * deltaTime
     
-    // Ограничение в пределах поля
     this.x = Math.max(50, Math.min(650 - this.size, this.x))
     this.y = Math.max(50, Math.min(650 - this.size, this.y))
   }
 }
 
-// Класс хищника
-class Predator extends Creature {
-  constructor(x, y, size, speed, vision) {
-    super(x, y, size, speed, vision, 'predator')
-    this.color = `hsl(${Math.random() * 60}, 70%, 50%)` // Красные оттенки
-  }
-
-  findTarget(creatures) {
-    let nearest = null
-    let minDist = Infinity
-    
-    creatures.forEach(other => {
-      if (other === this || other.type !== 'prey') return
-      
-      const dist = this.distanceTo(other)
-      if (dist < this.vision && dist < minDist) {
-        minDist = dist
-        nearest = other
-      }
-    })
-    
-    return nearest
-  }
-}
-
-// Класс мирного существа
+// Класс мирного существа с возможностью охоты
 class Prey extends Creature {
   constructor(x, y, size, speed, vision) {
     super(x, y, size, speed, vision, 'prey')
-    this.color = `hsl(${120 + Math.random() * 90}, 70%, 50%)` // Зеленые оттенки
+    this.huntingCooldown = 0
   }
 
-  findTarget(foods) {
-    let nearest = null
-    let minDist = Infinity
+  findTarget(foods, creatures) {
+    // Сначала ищем еду
+    let nearestFood = null
+    let minFoodDist = Infinity
     
     foods.forEach(food => {
       const dist = this.distanceTo(food)
-      if (dist < this.vision && dist < minDist) {
-        minDist = dist
-        nearest = food
+      if (dist < this.vision && dist < minFoodDist) {
+        minFoodDist = dist
+        nearestFood = food
       }
     })
-    
-    return nearest
+
+    // Если энергии мало, ищем других существ меньшего размера
+    if (this.energy < 70 && this.huntingCooldown <= 0) {
+      let nearestCreature = null
+      let minCreatureDist = Infinity
+      
+      creatures.forEach(other => {
+        if (other === this || other.size > this.size * 0.7) return
+        
+        const dist = this.distanceTo(other)
+        if (dist < this.vision && dist < minCreatureDist) {
+          minCreatureDist = dist
+          nearestCreature = other
+        }
+      })
+
+      if (nearestCreature && (!nearestFood || minCreatureDist < minFoodDist)) {
+        this.isAggressive = true
+        return nearestCreature
+      }
+    }
+
+    this.isAggressive = false
+    return nearestFood
+  }
+
+  update(deltaTime) {
+    if (this.huntingCooldown > 0) {
+      this.huntingCooldown -= deltaTime
+    }
+    return super.update(deltaTime)
   }
 }
 
@@ -211,11 +213,8 @@ export default {
     }
   },
   computed: {
-    predatorCount() {
-      return this.creatures.filter(c => c.type === 'predator').length
-    },
-    preyCount() {
-      return this.creatures.filter(c => c.type === 'prey').length
+    creatureCount() {
+      return this.creatures.length
     }
   },
   mounted() {
@@ -230,22 +229,9 @@ export default {
   },
   methods: {
     initSimulation() {
-      // Создаем начальных существ
-      for (let i = 0; i < 5; i++) this.spawnRandomPrey()
-      for (let i = 0; i < 0; i++) this.spawnRandomPredator()
-      this.spawnFood(4)
+      for (let i = 0; i < 10; i++) this.spawnRandomPrey()
+      this.spawnFood(10)
       this.updateStats()
-    },
-    
-    spawnRandomPredator() {
-      const x = 50 + Math.random() * 600
-      const y = 50 + Math.random() * 600
-      this.creatures.push(new Predator(
-        x, y,
-        20 + Math.random() * 10,
-        1 + Math.random(),
-        100 + Math.random() * 50
-      ))
     },
     
     spawnRandomPrey() {
@@ -253,9 +239,9 @@ export default {
       const y = 50 + Math.random() * 600
       this.creatures.push(new Prey(
         x, y,
-        15 + Math.random() * 10,
-        0.5 + Math.random(),
-        80 + Math.random() * 40
+        10 + Math.random() * 20,
+        0.3 + Math.random() * 1.2,
+        50 + Math.random() * 100
       ))
     },
     
@@ -312,7 +298,6 @@ export default {
       const newCreatures = []
       
       this.creatures.forEach((creature, index) => {
-        // Потеря энергии
         const isDead = creature.update(deltaTime)
         
         if (isDead) {
@@ -322,32 +307,19 @@ export default {
           return
         }
         
-        // Разное поведение для хищников и мирных
-        if (creature.type === 'predator') {
-          const target = creature.findTarget(this.creatures)
-          if (target) {
-            creature.moveTowards(target, deltaTime)
-          } else {
-            creature.moveRandomly(deltaTime)
-          }
-        } else { // Мирные существа
-          const target = creature.findTarget(this.foods)
-          if (target) {
-            creature.moveTowards(target, deltaTime)
-          } else {
-            creature.moveRandomly(deltaTime)
-          }
+        const target = creature.findTarget(this.foods, this.creatures)
+        if (target) {
+          creature.moveTowards(target, deltaTime)
+        } else {
+          creature.moveRandomly(deltaTime)
         }
       })
       
-      // Удаление умерших существ
       creaturesToRemove.sort((a, b) => b - a).forEach(index => {
         this.creatures.splice(index, 1)
       })
       
-      // Добавление новых существ
       this.creatures.push(...newCreatures)
-      
       this.updateStats()
     },
     
@@ -357,13 +329,13 @@ export default {
           const creature = this.creatures[i]
           const food = this.foods[j]
           
-          if (creature.type === 'prey' && this.distance(creature, food) < creature.size / 2) {
+          if (this.distance(creature, food) < creature.size / 2) {
             creature.energy += food.energy
             creature.foodEaten++
             this.foods.splice(j, 1)
             j--
             
-            if (creature.foodEaten >= 4) {
+            if (creature.foodEaten >= 3) {
               creature.foodEaten = 0
               this.creatures.push(this.reproduceCreature(creature))
               this.stats.newCreatures++
@@ -383,14 +355,12 @@ export default {
     },
     
     resolveCollision(c1, c2) {
-      // Хищник атакует мирное существо
-      if (c1.type === 'predator' && c2.type === 'prey') {
-        this.predatorEatsPrey(c1, c2)
+      if (c1.size > c2.size * 1.3 && c1.energy < 100) {
+        this.creatureEatsCreature(c1, c2)
       } 
-      else if (c2.type === 'predator' && c1.type === 'prey') {
-        this.predatorEatsPrey(c2, c1)
+      else if (c2.size > c1.size * 1.3 && c2.energy < 100) {
+        this.creatureEatsCreature(c2, c1)
       }
-      // Отталкивание одинаковых существ
       else {
         const dx = c2.x - c1.x
         const dy = c2.y - c1.y
@@ -406,9 +376,10 @@ export default {
       }
     },
     
-    predatorEatsPrey(predator, prey) {
-      predator.energy += prey.energy / 2
+    creatureEatsCreature(predator, prey) {
+      predator.energy += prey.energy * 0.8
       predator.foodEaten++
+      predator.huntingCooldown = 5 // Задержка перед следующей охотой
       
       const index = this.creatures.indexOf(prey)
       if (index !== -1) {
@@ -422,19 +393,13 @@ export default {
       const speed = parent.speed * (0.8 + Math.random() * 0.4)
       const vision = parent.vision * (0.8 + Math.random() * 0.4)
       
-      if (parent.type === 'predator') {
-        return new Predator(
-          parent.x + (Math.random() * 40 - 20),
-          parent.y + (Math.random() * 40 - 20),
-          size, speed, vision
-        )
-      } else {
-        return new Prey(
-          parent.x + (Math.random() * 40 - 20),
-          parent.y + (Math.random() * 40 - 20),
-          size, speed, vision
-        )
-      }
+      return new Prey(
+        parent.x + (Math.random() * 40 - 20),
+        parent.y + (Math.random() * 40 - 20),
+        Math.max(5, Math.min(40, size)),
+        Math.max(0.2, Math.min(2.0, speed)),
+        Math.max(30, Math.min(200, vision))
+      )
     },
     
     distance(a, b) {
@@ -459,12 +424,12 @@ export default {
       
       this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height)
       
-      // Рисуем границы
+      // Границы
       this.ctx.strokeStyle = '#ffffff'
       this.ctx.lineWidth = 2
       this.ctx.strokeRect(50, 50, 600, 600)
       
-      // Рисуем еду
+      // Еда
       this.foods.forEach(food => {
         this.ctx.fillStyle = food.color
         this.ctx.beginPath()
@@ -472,7 +437,7 @@ export default {
         this.ctx.fill()
       })
       
-      // Рисуем существ
+      // Существа
       this.creatures.forEach(creature => {
         // Тело
         this.ctx.fillStyle = creature.color
@@ -480,8 +445,8 @@ export default {
         this.ctx.arc(creature.x, creature.y, creature.size / 2, 0, Math.PI * 2)
         this.ctx.fill()
         
-        // Глаза (разные для хищников и мирных)
-        this.ctx.fillStyle = creature.type === 'predator' ? '#ff0000' : '#ffffff'
+        // Глаза
+        this.ctx.fillStyle = creature.isAggressive ? '#ff0000' : '#ffffff'
         this.ctx.beginPath()
         this.ctx.arc(
           creature.x + creature.dx * creature.size * 0.3,
@@ -491,6 +456,15 @@ export default {
           Math.PI * 2
         )
         this.ctx.fill()
+        
+        // Обводка для крупных существ
+        if (creature.size > 20) {
+          this.ctx.strokeStyle = creature.isAggressive ? '#ff0000' : '#00ff00'
+          this.ctx.lineWidth = 2
+          this.ctx.beginPath()
+          this.ctx.arc(creature.x, creature.y, creature.size / 2 + 2, 0, Math.PI * 2)
+          this.ctx.stroke()
+        }
       })
     }
   }
