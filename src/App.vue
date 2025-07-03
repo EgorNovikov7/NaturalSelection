@@ -177,8 +177,9 @@ class Prey extends Creature {
 
 class Food {
   constructor(x, y) {
-    this.x = x
-    this.y = y
+    // Гарантируем, что еда не появляется слишком близко к краю
+    this.x = Math.max(70, Math.min(630, x))
+    this.y = Math.max(70, Math.min(630, y))
     this.energy = 45
     this.color = '#2ecc71'
     this.size = 5
@@ -238,10 +239,10 @@ export default {
     
     spawnFood(amount) {
       for (let i = 0; i < amount; i++) {
-        this.foods.push(new Food(
-          50 + Math.random() * 600,
-          50 + Math.random() * 600
-        ))
+        // Генерируем координаты не ближе 20 пикселей от края
+        const x = 70 + Math.random() * 560
+        const y = 70 + Math.random() * 560
+        this.foods.push(new Food(x, y))
       }
     },
     
