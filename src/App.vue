@@ -3,6 +3,7 @@
     <div class="simulation-wrapper">
       <canvas ref="canvas" width="700" height="700"></canvas>
       <div class="statistics-panel">
+        <!-- Статистика остается без изменений -->
         <h2>Статистика</h2>
         <div class="stats">
           <p>Умерли от голода: {{ stats.energyDeaths }}</p>
@@ -18,6 +19,7 @@
           <p>Среднее зрение: {{ stats.avgVision.toFixed(2) }}</p>
         </div>
 
+        <!-- Управление остается без изменений -->
         <div class="controls">
           <h3>Управление</h3>
           <button @click="togglePause">
@@ -194,15 +196,31 @@ export default {
   },
   mounted() {
     this.canvas = this.$refs.canvas
+    // Фиксируем размеры canvas
+    this.canvas.width = 700
+    this.canvas.height = 700
     this.ctx = this.canvas.getContext('2d')
     this.initSimulation()
     this.startAnimation()
     this.startFoodSpawner()
+    window.addEventListener('resize', this.handleResize)
   },
   beforeUnmount() {
     this.stopSimulation()
+    window.removeEventListener('resize', this.handleResize)
   },
   methods: {
+    handleResize() {
+      // Поддерживаем квадратные пропорции
+      const container = this.$el.querySelector('.simulation-wrapper')
+      const availableWidth = container.clientWidth - 320 // минус панель статистики
+      const newSize = Math.min(700, availableWidth)
+      
+      this.canvas.style.width = `${newSize}px`
+      this.canvas.style.height = `${newSize}px`
+    },
+    
+    // Остальные методы остаются без изменений
     initSimulation() {
       for (let i = 0; i < 15; i++) this.spawnRandomCreature()
       this.spawnFood(15)
@@ -486,12 +504,15 @@ export default {
     draw() {
       if (!this.ctx) return
       
+      // Очистка с учетом реальных размеров
       this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height)
       
+      // Рисуем границы
       this.ctx.strokeStyle = '#ffffff'
       this.ctx.lineWidth = 2
       this.ctx.strokeRect(50, 50, 600, 600)
       
+      // Рисуем еду
       this.foods.forEach(food => {
         this.ctx.fillStyle = food.color
         this.ctx.beginPath()
@@ -499,6 +520,7 @@ export default {
         this.ctx.fill()
       })
       
+      // Рисуем существ
       this.creatures.forEach(creature => {
         this.ctx.fillStyle = creature.color
         this.ctx.beginPath()
@@ -533,46 +555,57 @@ export default {
 .simulation-container {
   display: flex;
   justify-content: center;
-  padding: 20px;
+  padding: 10px;
 }
 
 .simulation-wrapper {
   display: flex;
-  gap: 20px;
+  gap: 15px;
+  max-width: 1020px;
+  width: 100%;
 }
 
 canvas {
   background-color: #000000;
-  border-radius: 8px;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  border-radius: 6px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  width: 700px;
+  height: 700px;
+  image-rendering: crisp-edges;
 }
 
 .statistics-panel {
   width: 300px;
   background-color: #fff;
-  border-radius: 8px;
-  padding: 20px;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  border-radius: 6px;
+  padding: 15px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  overflow-y: auto;
 }
 
 .stats {
-  margin-bottom: 20px;
+  margin-bottom: 15px;
+  font-size: 0.9em;
+}
+
+.stats p {
+  margin: 5px 0;
 }
 
 .controls {
   display: flex;
   flex-direction: column;
-  gap: 15px;
+  gap: 10px;
 }
 
 button {
-  padding: 10px 15px;
+  padding: 8px 12px;
+  font-size: 0.85em;
   background-color: #3498db;
   color: white;
   border: none;
   border-radius: 4px;
   cursor: pointer;
-  font-weight: bold;
   transition: background-color 0.2s;
 }
 
@@ -583,54 +616,83 @@ button:hover {
 .spawn-controls {
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 8px;
 }
 
 .custom-creature {
-  margin: 15px 0;
-  padding: 15px;
+  margin: 10px 0;
+  padding: 10px;
   background-color: #f8f9fa;
   border-radius: 4px;
 }
 
 .custom-creature h3 {
-  margin-top: 0;
+  margin: 5px 0 10px 0;
+  font-size: 1em;
 }
 
 .settings {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-  padding: 15px;
+  padding: 10px;
+  gap: 8px;
   background-color: #f8f9fa;
   border-radius: 4px;
 }
 
 .settings div {
+  margin-bottom: 5px;
   display: flex;
   justify-content: space-between;
   align-items: center;
 }
 
 input {
-  padding: 8px;
+  padding: 6px;
+  width: 50px;
+  font-size: 0.85em;
   border: 1px solid #ddd;
   border-radius: 4px;
-  width: 60px;
 }
 
 input[type="color"] {
-  width: 40px;
-  height: 30px;
+  width: 30px;
+  height: 25px;
   padding: 2px;
 }
 
-h2, h3 {
+h2 {
+  font-size: 1.3em;
+  margin-bottom: 10px;
   color: #2c3e50;
-  margin-top: 0;
 }
 
 h3 {
-  margin-bottom: 10px;
+  font-size: 1.1em;
+  margin: 5px 0;
+  color: #2c3e50;
+}
+
+@media (max-width: 1000px) {
+  .simulation-wrapper {
+    flex-direction: column;
+    align-items: center;
+  }
+  
+  .statistics-panel {
+    width: 700px;
+    max-height: 300px;
+  }
+}
+
+@media (max-width: 750px) {
+  canvas {
+    width: 100%;
+    height: auto;
+    max-width: 100vw;
+    max-height: 100vw;
+  }
+  
+  .statistics-panel {
+    width: 100%;
+  }
 }
 </style>
