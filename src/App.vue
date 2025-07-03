@@ -3,7 +3,6 @@
     <div class="simulation-wrapper">
       <canvas ref="canvas" width="700" height="700"></canvas>
       <div class="statistics-panel">
-        <!-- Статистика остается без изменений -->
         <h2>Статистика</h2>
         <div class="stats">
           <p>Умерли от голода: {{ stats.energyDeaths }}</p>
@@ -19,7 +18,6 @@
           <p>Среднее зрение: {{ stats.avgVision.toFixed(2) }}</p>
         </div>
 
-        <!-- Управление остается без изменений -->
         <div class="controls">
           <h3>Управление</h3>
           <button @click="togglePause">
@@ -138,19 +136,24 @@ class Creature {
   }
 
   clone() {
+    const mutationRate = 0.1;
+    const sizeMutation = (Math.random() * 2 - 1) * this.size * mutationRate;
+    const speedMutation = (Math.random() * 2 - 1) * this.speed * mutationRate;
+    const visionMutation = (Math.random() * 2 - 1) * this.vision * mutationRate;
+
     const clone = new Creature(
       this.x, 
       this.y, 
-      this.size, 
-      this.speed, 
-      this.vision, 
+      Math.max(10, this.size + sizeMutation), 
+      Math.max(0.1, this.speed + speedMutation), 
+      Math.max(50, this.vision + visionMutation), 
       this.color
-    )
-    clone.energy = this.energy
-    clone.dx = this.dx
-    clone.dy = this.dy
-    clone.isAggressive = this.isAggressive
-    return clone
+    );
+    clone.energy = this.energy * 0.8;
+    clone.dx = this.dx;
+    clone.dy = this.dy;
+    clone.isAggressive = this.isAggressive;
+    return clone;
   }
 }
 
@@ -196,7 +199,6 @@ export default {
   },
   mounted() {
     this.canvas = this.$refs.canvas
-    // Фиксируем размеры canvas
     this.canvas.width = 700
     this.canvas.height = 700
     this.ctx = this.canvas.getContext('2d')
@@ -211,16 +213,14 @@ export default {
   },
   methods: {
     handleResize() {
-      // Поддерживаем квадратные пропорции
       const container = this.$el.querySelector('.simulation-wrapper')
-      const availableWidth = container.clientWidth - 320 // минус панель статистики
+      const availableWidth = container.clientWidth - 320
       const newSize = Math.min(700, availableWidth)
       
       this.canvas.style.width = `${newSize}px`
       this.canvas.style.height = `${newSize}px`
     },
     
-    // Остальные методы остаются без изменений
     initSimulation() {
       for (let i = 0; i < 15; i++) this.spawnRandomCreature()
       this.spawnFood(15)
@@ -358,7 +358,7 @@ export default {
         let minDist = Infinity
         
         this.creatures.forEach(other => {
-          if (other === creature || other.size >= creature.size) return
+          if (other === creature || other.size >= creature.size * 0.8) return
           
           const dist = creature.distanceTo(other)
           if (dist < creature.vision && dist < minDist) {
@@ -427,11 +427,11 @@ export default {
           const c2 = this.creatures[j]
           
           if (this.distance(c1, c2) < (c1.size + c2.size) / 2) {
-            if (c1.size > c2.size) {
+            if (c1.size > c2.size * 1.2) {
               this.creatureEatsCreature(c1, c2)
               j--
             } 
-            else if (c2.size > c1.size) {
+            else if (c2.size > c1.size * 1.2) {
               this.creatureEatsCreature(c2, c1)
               i--
               break
@@ -504,15 +504,12 @@ export default {
     draw() {
       if (!this.ctx) return
       
-      // Очистка с учетом реальных размеров
       this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height)
       
-      // Рисуем границы
       this.ctx.strokeStyle = '#ffffff'
       this.ctx.lineWidth = 2
       this.ctx.strokeRect(50, 50, 600, 600)
       
-      // Рисуем еду
       this.foods.forEach(food => {
         this.ctx.fillStyle = food.color
         this.ctx.beginPath()
@@ -520,7 +517,6 @@ export default {
         this.ctx.fill()
       })
       
-      // Рисуем существ
       this.creatures.forEach(creature => {
         this.ctx.fillStyle = creature.color
         this.ctx.beginPath()
