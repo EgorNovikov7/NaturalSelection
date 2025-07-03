@@ -1,7 +1,7 @@
 <template>
   <div class="simulation-container">
     <div class="simulation-wrapper">
-      <canvas ref="canvas" width="700" height="700"></canvas>
+      <canvas ref="canvas" width="1000" height="1000"></canvas>
       <div class="statistics-panel">
         <h2>Статистика</h2>
         <div class="stats">
@@ -67,11 +67,6 @@
     </div>
   </div>
 </template>
-
- 
-
-  
-
 
 <script>
 class Creature {
@@ -144,8 +139,8 @@ class Creature {
   }
 
   moveRandomly(deltaTime) {
-    if (this.x <= 50 || this.x >= 650 - this.size ||
-        this.y <= 50 || this.y >= 650 - this.size) {
+    if (this.x <= 100 || this.x >= 900 - this.size ||
+        this.y <= 100 || this.y >= 900 - this.size) {
       this.bounceFromWall();
     }
 
@@ -168,20 +163,20 @@ class Creature {
     this.y += this.dy * this.speed * 30 * deltaTime * speedMultiplier;
 
     let bounced = false;
-    if (this.x <= 50) {
-      this.x = 50;
+    if (this.x <= 100) {
+      this.x = 100;
       bounced = true;
     }
-    if (this.x >= 650 - this.size) {
-      this.x = 650 - this.size;
+    if (this.x >= 900 - this.size) {
+      this.x = 900 - this.size;
       bounced = true;
     }
-    if (this.y <= 50) {
-      this.y = 50;
+    if (this.y <= 100) {
+      this.y = 100;
       bounced = true;
     }
-    if (this.y >= 650 - this.size) {
-      this.y = 650 - this.size;
+    if (this.y >= 900 - this.size) {
+      this.y = 900 - this.size;
       bounced = true;
     }
     if (bounced) {
@@ -253,8 +248,8 @@ export default {
   },
   mounted() {
     this.canvas = this.$refs.canvas;
-    this.canvas.width = 700;
-    this.canvas.height = 700;
+    this.canvas.width = 1000;
+    this.canvas.height = 1000;
     this.ctx = this.canvas.getContext('2d');
     this.initSimulation();
     this.startAnimation();
@@ -269,7 +264,7 @@ export default {
     handleResize() {
       const container = this.$el.querySelector('.simulation-wrapper');
       const availableWidth = container.clientWidth - 320;
-      const newSize = Math.min(700, availableWidth);
+      const newSize = Math.min(1000, availableWidth);
       
       this.canvas.style.width = `${newSize}px`;
       this.canvas.style.height = `${newSize}px`;
@@ -282,8 +277,8 @@ export default {
     },
     
     spawnRandomCreature() {
-      const x = 50 + Math.random() * 600;
-      const y = 50 + Math.random() * 600;
+      const x = 100 + Math.random() * 800;
+      const y = 100 + Math.random() * 800;
       const size = Math.min(100, 15 + Math.random() * 15); // Добавлено ограничение
       const speed = 0.5 + Math.random() * 1.5;
       const vision = 80 + Math.random() * 100;
@@ -291,8 +286,8 @@ export default {
     },
     
     spawnCustomCreature() {
-      const x = 50 + Math.random() * 600;
-      const y = 50 + Math.random() * 600;
+      const x = 100 + Math.random() * 800;
+      const y = 100 + Math.random() * 800;
       this.creatures.push(new Creature(
         x, 
         y, 
@@ -304,7 +299,7 @@ export default {
     },
     
     getValidFoodPosition() {
-      const margin = 60;
+      const margin = 100;
       const maxAttempts = 100;
       let x, y, valid = false;
       
@@ -326,10 +321,10 @@ export default {
     },
     
     spawnFood(amount) {
-      const spawnMargin = 30;
+      const spawnMargin = 100;
       const gameArea = {
-        x1: 50, y1: 50,
-        x2: 650, y2: 650
+        x1: 100, y1: 100,
+        x2: 900, y2: 900
       };
       
       for (let i = 0; i < amount; i++) {
@@ -404,7 +399,7 @@ export default {
         if (isDead) {
           creaturesToRemove.push(index);
           this.stats.energyDeaths++;
-          this.foods.push(new Food(creature.x, creature.y));
+          // Убрано создание еды при смерти от голода
           return;
         }
         
@@ -585,9 +580,7 @@ export default {
       
       this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
       
-      this.ctx.strokeStyle = '#ffffff';
-      this.ctx.lineWidth = 2;
-      this.ctx.strokeRect(50, 50, 600, 600);
+      // Убрано отображение границ
       
       this.foods.forEach(food => {
         this.ctx.fillStyle = food.color;
@@ -634,9 +627,6 @@ export default {
 };
 </script>
 
-
-
-
 <style>
 .simulation-container {
   display: flex;
@@ -647,7 +637,7 @@ export default {
 .simulation-wrapper {
   display: flex;
   gap: 15px;
-  max-width: 1020px;
+  max-width: 1320px;
   width: 100%;
 }
 
@@ -655,8 +645,8 @@ canvas {
   background-color: #000000;
   border-radius: 6px;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-  width: 700px;
-  height: 700px;
+  width: 1000px;
+  height: 1000px;
   image-rendering: crisp-edges;
 }
 
@@ -757,19 +747,19 @@ h3 {
   color: #2c3e50;
 }
 
-@media (max-width: 1000px) {
+@media (max-width: 1400px) {
   .simulation-wrapper {
     flex-direction: column;
     align-items: center;
   }
   
   .statistics-panel {
-    width: 700px;
+    width: 1000px;
     max-height: 300px;
   }
 }
 
-@media (max-width: 750px) {
+@media (max-width: 1050px) {
   canvas {
     width: 100%;
     height: auto;
