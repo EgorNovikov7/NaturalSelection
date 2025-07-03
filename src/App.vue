@@ -33,7 +33,7 @@
           <div class="settings">
             <div>
               <label>Интервал еды (сек):</label>
-              <input type="number" v-model.number="foodSpawnInterval" min="1">
+              <input type="number" v-model.number="foodSpawnInterval" min="1" @change="restartFoodSpawner">
             </div>
             <div>
               <label>Количество еды:</label>
@@ -69,7 +69,7 @@ class Creature {
 
   // Добавлен метод update()
   update(deltaTime) {
-    this.energy -= 0.04 * deltaTime
+    this.energy -= 10 * deltaTime
     return this.energy <= 0 // Возвращает true, если существо умерло
   }
 
@@ -232,8 +232,8 @@ export default {
     initSimulation() {
       // Создаем начальных существ
       for (let i = 0; i < 5; i++) this.spawnRandomPrey()
-      for (let i = 0; i < 2; i++) this.spawnRandomPredator()
-      this.spawnFood(20)
+      for (let i = 0; i < 0; i++) this.spawnRandomPredator()
+      this.spawnFood(4)
       this.updateStats()
     },
     
@@ -273,6 +273,10 @@ export default {
       this.foodSpawnTimer = setInterval(() => {
         if (!this.isPaused) this.spawnFood(this.foodSpawnAmount)
       }, this.foodSpawnInterval * 1000)
+    },
+    
+    restartFoodSpawner() {
+      this.startFoodSpawner()
     },
     
     startAnimation() {
