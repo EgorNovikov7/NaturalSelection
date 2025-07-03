@@ -78,7 +78,7 @@ class Creature {
   constructor(x, y, size, speed, vision, color) {
     this.x = x;
     this.y = y;
-    this.size = size || 20;
+    this.size = Math.min(100, size || 20); // Добавлено ограничение
     this.speed = speed || 1.0;
     this.vision = vision || 100;
     this.type = 'creature';
@@ -158,7 +158,6 @@ class Creature {
   }
 
   bounceFromWall() {
-    // Случайный угол направления
     const angle = Math.random() * 2 * Math.PI;
     this.dx = Math.cos(angle);
     this.dy = Math.sin(angle);
@@ -185,7 +184,6 @@ class Creature {
       this.y = 650 - this.size;
       bounced = true;
     }
-    // Если ударился о стену — случайный разворот
     if (bounced) {
       this.bounceFromWall();
     }
@@ -200,7 +198,7 @@ class Creature {
     const clone = new Creature(
       this.x,
       this.y,
-      Math.max(10, this.size + sizeMutation),
+      Math.min(100, Math.max(10, this.size + sizeMutation)), // Добавлено ограничение
       Math.max(0.1, this.speed + speedMutation),
       Math.max(50, this.vision + visionMutation),
       this.color
@@ -212,7 +210,6 @@ class Creature {
     return clone;
   }
 }
-
 
 class Food {
   constructor(x, y) {
@@ -287,7 +284,7 @@ export default {
     spawnRandomCreature() {
       const x = 50 + Math.random() * 600;
       const y = 50 + Math.random() * 600;
-      const size = 15 + Math.random() * 15;
+      const size = Math.min(100, 15 + Math.random() * 15); // Добавлено ограничение
       const speed = 0.5 + Math.random() * 1.5;
       const vision = 80 + Math.random() * 100;
       this.creatures.push(new Creature(x, y, size, speed, vision));
@@ -299,7 +296,7 @@ export default {
       this.creatures.push(new Creature(
         x, 
         y, 
-        this.customCreature.size,
+        Math.min(100, this.customCreature.size), // Добавлено ограничение
         this.customCreature.speed,
         this.customCreature.vision,
         this.customCreature.color
@@ -411,7 +408,6 @@ export default {
           return;
         }
         
-        // Если существо убегает, просто продолжаем движение
         if (creature.fleeing) {
           creature.move(deltaTime, 1.5);
           return;
@@ -421,7 +417,6 @@ export default {
         let predator = null;
         let minDist = Infinity;
         
-        // Проверяем наличие хищников поблизости
         this.creatures.forEach(other => {
           if (other === creature) return;
           
@@ -434,7 +429,6 @@ export default {
           }
         });
         
-        // Если обнаружен хищник, начинаем убегать
         if (predator) {
           creature.fleeing = true;
           creature.fleeTimer = 2;
@@ -442,7 +436,6 @@ export default {
           return;
         }
         
-        // Обычное поведение
         this.creatures.forEach(other => {
           if (other === creature || other.size >= creature.size * 0.8) return;
           
@@ -487,7 +480,7 @@ export default {
           const food = this.foods[j];
           
           if (this.distance(creature, food) < creature.size / 2) {
-            creature.size *= 1.03;
+            creature.size = Math.min(100, creature.size * 1.03); // Добавлено ограничение
             creature.speed *= 0.97;
             creature.vision *= 1.03;
             creature.energy = 100;
@@ -541,7 +534,7 @@ export default {
     },
     
     creatureEatsCreature(predator, prey) {
-      predator.size *= 1.03;
+      predator.size = Math.min(100, predator.size * 1.03); // Добавлено ограничение
       predator.speed *= 0.97;
       predator.vision *= 1.03;
       predator.energy = 100;
@@ -640,7 +633,6 @@ export default {
   }
 };
 </script>
-
 
 
 
