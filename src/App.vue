@@ -456,7 +456,7 @@ export default {
       this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height)
       
       // Рисуем границы
-      this.ctx.strokeStyle = '#34495e'
+      this.ctx.strokeStyle = '#ffffff'
       this.ctx.lineWidth = 2
       this.ctx.strokeRect(50, 50, 600, 600)
       
@@ -506,7 +506,7 @@ export default {
 }
 
 canvas {
-  background-color: #ecf0f1;
+  background-color: #000000;
   border-radius: 8px;
   box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
 }
