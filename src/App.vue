@@ -100,14 +100,14 @@ class Creature {
 
   update(deltaTime) {
     this.energy -= 1.5 * deltaTime * (this.size / 20);
-    
+
     if (this.fleeing) {
       this.fleeTimer -= deltaTime;
       if (this.fleeTimer <= 0) {
         this.fleeing = false;
       }
     }
-    
+
     return this.energy <= 0;
   }
 
@@ -119,12 +119,12 @@ class Creature {
     const dx = target.x - this.x;
     const dy = target.y - this.y;
     const dist = Math.sqrt(dx * dx + dy * dy);
-    
+
     if (dist > 1) {
       this.dx = dx / dist;
       this.dy = dy / dist;
     }
-    
+
     this.move(deltaTime);
   }
 
@@ -132,12 +132,12 @@ class Creature {
     const dx = this.x - predator.x;
     const dy = this.y - predator.y;
     const dist = Math.sqrt(dx * dx + dy * dy);
-    
+
     if (dist > 0) {
       this.fleeDirection.x = dx / dist;
       this.fleeDirection.y = dy / dist;
     }
-    
+
     this.dx = this.fleeDirection.x;
     this.dy = this.fleeDirection.y;
     this.move(deltaTime, 1.5);
@@ -146,24 +146,49 @@ class Creature {
   moveRandomly(deltaTime) {
     if (this.x <= 50 || this.x >= 650 - this.size ||
         this.y <= 50 || this.y >= 650 - this.size) {
-      this.dx = Math.random() * 2 - 1;
-      this.dy = Math.random() * 2 - 1;
+      this.bounceFromWall();
     }
-    
+
     if (Math.random() < 0.01) {
       this.dx = Math.random() * 2 - 1;
       this.dy = Math.random() * 2 - 1;
     }
-    
+
     this.move(deltaTime);
+  }
+
+  bounceFromWall() {
+    // Случайный угол направления
+    const angle = Math.random() * 2 * Math.PI;
+    this.dx = Math.cos(angle);
+    this.dy = Math.sin(angle);
   }
 
   move(deltaTime, speedMultiplier = 1) {
     this.x += this.dx * this.speed * 30 * deltaTime * speedMultiplier;
     this.y += this.dy * this.speed * 30 * deltaTime * speedMultiplier;
-    
-    this.x = Math.max(50, Math.min(650 - this.size, this.x));
-    this.y = Math.max(50, Math.min(650 - this.size, this.y));
+
+    let bounced = false;
+    if (this.x <= 50) {
+      this.x = 50;
+      bounced = true;
+    }
+    if (this.x >= 650 - this.size) {
+      this.x = 650 - this.size;
+      bounced = true;
+    }
+    if (this.y <= 50) {
+      this.y = 50;
+      bounced = true;
+    }
+    if (this.y >= 650 - this.size) {
+      this.y = 650 - this.size;
+      bounced = true;
+    }
+    // Если ударился о стену — случайный разворот
+    if (bounced) {
+      this.bounceFromWall();
+    }
   }
 
   clone() {
@@ -173,11 +198,11 @@ class Creature {
     const visionMutation = (Math.random() * 2 - 1) * this.vision * mutationRate;
 
     const clone = new Creature(
-      this.x, 
-      this.y, 
-      Math.max(10, this.size + sizeMutation), 
-      Math.max(0.1, this.speed + speedMutation), 
-      Math.max(50, this.vision + visionMutation), 
+      this.x,
+      this.y,
+      Math.max(10, this.size + sizeMutation),
+      Math.max(0.1, this.speed + speedMutation),
+      Math.max(50, this.vision + visionMutation),
       this.color
     );
     clone.energy = this.energy * 0.8;
@@ -187,6 +212,7 @@ class Creature {
     return clone;
   }
 }
+
 
 class Food {
   constructor(x, y) {
